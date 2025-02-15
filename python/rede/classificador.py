@@ -49,7 +49,16 @@ def getClasse(dados, amostras, T):
     harmonicos_normalizados = getHarmonicos(dados, amostras, T)
     
     predictions = modelo_carregado.predict(harmonicos_normalizados)
+    predictions = predictions.round(decimals = 2)
+    classe = pd.DataFrame(predictions.round(decimals = 2))
+    print(classe)
     
-    classe = pd.DataFrame(predictions) 
-    classe = classe.idxmax(axis=1)[0] + 1 # pega coluna com valor mais proximo de 1
-    return classe
+    coluna_maior  = classe.idxmax(axis=1) # pega coluna com valor mais proximo de 1
+    # frequência de cada coluna
+    frequencia_colunas = coluna_maior.value_counts()
+    # Coluna que aparece mais vezes
+    coluna_mais_frequente = frequencia_colunas.idxmax()
+
+    print("Coluna que aparece mais vezes como a maior:", coluna_mais_frequente)
+    print("Frequência das colunas:\n", frequencia_colunas) # pega coluna com valor mais proximo de 1
+    return coluna_mais_frequente
