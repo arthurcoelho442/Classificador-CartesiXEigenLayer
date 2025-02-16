@@ -84,7 +84,7 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     // send
     function sendData(uint256[] memory currents, uint256 timestamp) external userExists(msg.sender) {
         // Verifica se o array de currents tem exatamente 100.000 elementos
-        require(currents.length == 99960, "The batch must contain exactly 99,960 current values.");
+        require(currents.length == 1666, "The batch must contain exactly 99,960 current values.");
 
         bytes memory input = abi.encode(currents);
         bytes32 requestHash = keccak256(input);
@@ -110,7 +110,7 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
         for (uint i = 0; i < users[user].devices.length; i++) {
             if (users[user].devices[i].id == id){
                 uint256 dataLength = users[user].devices[i].data.length;
-                uint256 init = dataLength >= 4998 ? dataLength - 4998 : 0;
+                uint256 init = dataLength >= 1666 ? dataLength - 1666 : 0;
                 DeviceReportView[] memory data = new DeviceReportView[](dataLength - init);
 
                 for (uint j = 0; j < dataLength - init; j++) {
