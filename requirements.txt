@@ -1,4 +1,0 @@
-tflite-runtime
-numpy
-scikit-learn
-pandas
