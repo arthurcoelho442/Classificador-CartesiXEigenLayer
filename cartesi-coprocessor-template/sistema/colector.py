@@ -18,9 +18,5 @@ def main():
     resultado = getClasse(dados, amostras, T)
     print(f"{resultado}")
 
-    # Exemplo: gravar o resultado em um arquivo para ser lido pelo framework
-    with open("output.txt", "w") as f:
-        f.write(str(resultado))
-
 if __name__ == "__main__":
     main()

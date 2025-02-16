@@ -23,7 +23,7 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     address[] public userAddresses;
     mapping(address => User) public users;
     mapping(bytes32 => address) private requestSender;
-    mapping(address => DeviceReportView[]) public tempData;
+    mapping(bytes32 => uint256) private requestTimestamp;
 
     event ResultReceived(bytes32 indexed inputPayloadHash, bytes output);
 
@@ -46,52 +46,48 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
         users[owner].devices.push(DeviceView('Hair cutter', 13, new DeviceReportView[](0)));
         users[owner].devices.push(DeviceView('Notebook Wanderley', 14, new DeviceReportView[](0)));
         users[owner].devices.push(DeviceView('Notebook Leo', 15, new DeviceReportView[](0)));
-        
 
         // ADMIN
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
     }
 
-    function runExecution(bytes calldata input) external {
+    function runExecution(bytes calldata input) {
         callCoprocessor(input);
     }
 
     function handleNotice(bytes32 inputPayloadHash, bytes memory notice) internal override {
-        require(notice.length >= 32, "Invalid notice length");
+        require(notice.length >= 64, "Invalid notice length");
 
-        uint256 id = abi.decode(notice, (uint256));
+        (uint256 id, uint256 current) = abi.decode(notice, (uint256, uint256));
 
-        address sender = requestSender[inputPayloadHash];
+        address sender      = requestSender[inputPayloadHash];
+        uint256 timestamp   = requestTimestamp[inputPayloadHash];
         require(sender != address(0), "Unknown request");
 
         delete requestSender[inputPayloadHash];
+        delete requestTimestamp[inputPayloadHash];
 
         for (uint i = 0; i < users[sender].devices.length; i++) {
             if (users[sender].devices[i].id == id) {
-                for (uint j = 0; j < tempData[sender].length; j++) {
-                    users[sender].devices[i].data.push(tempData[sender][j]);
-                }
+                users[sender].devices[i].data.push(DeviceReportView(current, timestamp));
                 break;
             }
         }
-        delete tempData[sender];
         emit ResultReceived(inputPayloadHash, notice);
     }
 
     // send
-    function sendData(uint256 current, uint256 timestamp) external userExists(msg.sender) {
-        tempData[msg.sender].push(DeviceReportView(current, timestamp));
+    function sendData(uint256[] memory currents, uint256 timestamp) external userExists(msg.sender) {
+        // Verifica se o array de currents tem exatamente 100.000 elementos
+        require(currents.length == 99960, "The batch must contain exactly 99,960 current values.");
 
-        if (tempData[msg.sender].length >= 4998) {
-            DeviceReportView[] memory temp = tempData[msg.sender];
-            bytes memory input = abi.encode(temp);
+        bytes memory input = abi.encode(currents);
+        bytes32 requestHash = keccak256(input);
 
-            bytes32 requestHash = keccak256(input);
+        requestSender[requestHash]      = msg.sender;
+        requestTimestamp[requestHash]   = timestamp;
 
-            requestSender[requestHash] = msg.sender;
-
-            runExecution(input);
-        }
+        runExecution(input);
     }
 
     // get
