@@ -1,0 +1,130 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import "../lib/coprocessor-base-contract/src/CoprocessorAdapter.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+
+contract ClassifierCaller is CoprocessorAdapter, AccessControl {
+    struct DeviceReportView {
+        uint256 current;    // in amper
+        uint256 timestamp;  // unix timestamp
+    }
+    struct DeviceView {
+        string name;
+        uint256  id;
+        DeviceReportView[] data;
+    }
+    struct User {
+        string name;
+        DeviceView[]  devices;
+    }
+
+    address public owner;
+    address[] public userAddresses;
+    mapping(address => User) public users;
+    mapping(bytes32 => address) private requestSender;
+    mapping(address => DeviceReportView[]) public tempData;
+
+    event ResultReceived(bytes32 indexed inputPayloadHash, bytes output);
+
+    modifier onlySuperAdmin() {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not super admin");
+        _;
+    }
+    modifier userExists(address user) {
+        require(bytes(users[user].name).length != 0, "User does not exist");
+        _;
+    }
+    constructor(address _taskIssuerAddress, bytes32 _machineHash) CoprocessorAdapter(_taskIssuerAddress, _machineHash) {
+        owner = msg.sender;
+
+        userAddresses.push(owner);
+        users[owner].name = 'owner';
+
+        // Add devices using push
+        users[owner].devices.push(DeviceView('Fan', 10, new DeviceReportView[](0)));
+        users[owner].devices.push(DeviceView('Hair cutter', 13, new DeviceReportView[](0)));
+        users[owner].devices.push(DeviceView('Notebook Wanderley', 14, new DeviceReportView[](0)));
+        users[owner].devices.push(DeviceView('Notebook Leo', 15, new DeviceReportView[](0)));
+        
+
+        // ADMIN
+        _grantRole(DEFAULT_ADMIN_ROLE, owner);
+    }
+
+    function runExecution(bytes calldata input) external {
+        callCoprocessor(input);
+    }
+
+    function handleNotice(bytes32 inputPayloadHash, bytes memory notice) internal override {
+        require(notice.length >= 32, "Invalid notice length");
+
+        uint256 id = abi.decode(notice, (uint256));
+
+        address sender = requestSender[inputPayloadHash];
+        require(sender != address(0), "Unknown request");
+
+        delete requestSender[inputPayloadHash];
+
+        for (uint i = 0; i < users[sender].devices.length; i++) {
+            if (users[sender].devices[i].id == id) {
+                for (uint j = 0; j < tempData[sender].length; j++) {
+                    users[sender].devices[i].data.push(tempData[sender][j]);
+                }
+                break;
+            }
+        }
+        delete tempData[sender];
+        emit ResultReceived(inputPayloadHash, notice);
+    }
+
+    // send
+    function sendData(uint256 current, uint256 timestamp) external userExists(msg.sender) {
+        tempData[msg.sender].push(DeviceReportView(current, timestamp));
+
+        if (tempData[msg.sender].length >= 4998) {
+            DeviceReportView[] memory temp = tempData[msg.sender];
+            bytes memory input = abi.encode(temp);
+
+            bytes32 requestHash = keccak256(input);
+
+            requestSender[requestHash] = msg.sender;
+
+            runExecution(input);
+        }
+    }
+
+    // get
+    function getDevices (address user) public view userExists(user) returns (DeviceView[] memory) {
+        return users[user].devices;
+    }
+    function getDeviceCurrentData(address user, uint256 id) public view userExists(user) returns (DeviceReportView[] memory) {
+        for (uint i = 0; i < users[user].devices.length; i++) {
+            if (users[user].devices[i].id == id){
+                uint256 dataLength = users[user].devices[i].data.length;
+                uint256 init = dataLength >= 4998 ? dataLength - 4998 : 0;
+                DeviceReportView[] memory data = new DeviceReportView[](dataLength - init);
+
+                for (uint j = 0; j < dataLength - init; j++) {
+                    data[j] = users[user].devices[i].data[init + j];
+                }
+
+                return data;
+            }
+        }
+        return new DeviceReportView[](0);
+    }
+
+    // add
+    function addUser(address user, string memory  name) external onlySuperAdmin {
+        require(bytes(users[user].name).length == 0, "User already exists");
+        users[user].name = name;
+        userAddresses.push(user);
+    }
+    function addDevice(address user, string memory name, uint256 id) external userExists(user) onlySuperAdmin {
+        for (uint i = 0; i < users[user].devices.length; i++) {
+            require(users[user].devices[i].id != id, "Device already exists");
+        }
+        users[user].devices.push(DeviceView(name, id, new DeviceReportView[](0)));
+    }
+}

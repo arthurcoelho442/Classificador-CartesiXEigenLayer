@@ -26,12 +26,10 @@ def handle_advance(data):
         payload = json.loads(payload_str)
         print("Payload:", payload)
 
-        # Check if the method is increment and counter value exists
         if payload.get('method') == "increment" and 'counter' in payload:
             new_counter = payload['counter'] + 1
             print(f"Counter incremented to: {new_counter}")
             
-            # Hex encode the counter value and pad to 32 bytes
             counter_hex = f"0x{new_counter:064x}"
             emit_notice({'payload': counter_hex})
             return "accept"
