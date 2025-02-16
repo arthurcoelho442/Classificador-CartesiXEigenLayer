@@ -59,7 +59,7 @@ def main():
         print("Erro ao ler o arquivo CSV:", e)
         return
 
-    batch_size = 1666  # 1 segundo de dados
+    batch_size = 4998  # 1 segundo de dados
     total_values = len(data)
     total_batches = total_values // batch_size
     print(f"Total de valores lidos: {total_values}. Batches a enviar: {total_batches}.")
