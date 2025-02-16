@@ -84,7 +84,7 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     // send
     function sendData(uint256[] memory currents, uint256 timestamp) external userExists(msg.sender) {
         // Verifica se o array de currents tem exatamente 100.000 elementos
-        require(currents.length == 1666, "The batch must contain exactly 1666 current values.");
+        require(currents.length == 4998, "The batch must contain exactly 4998 current values.");
 
         bytes memory input = abi.encode(currents);
         bytes32 requestHash = keccak256(input);

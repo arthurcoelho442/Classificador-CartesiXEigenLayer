@@ -9,7 +9,10 @@ tf.get_logger().setLevel('ERROR')
 # Carregar o modelo
 modelo_carregado = load_model('./backup/classificador.h5')
 
-def getHarmonicos(dados, amostras, T, qtd_Peaks=7):
+def getHarmonicos(dados, qtd_Peaks=7):
+    frequencia  = 60  # Hz
+    T           = 1 / frequencia
+    amostras    = int(T * 10**5)
     L = []
     for i in range(0, len(dados)):
         df = dados.iloc[i,:].transpose()
@@ -45,8 +48,8 @@ def getHarmonicos(dados, amostras, T, qtd_Peaks=7):
         scaler = MinMaxScaler(feature_range=(0,1))
     return scaler.fit_transform(pd.DataFrame(L)) #type: ignore
 
-def getClasse(dados, amostras, T):
-    harmonicos_normalizados = getHarmonicos(dados, amostras, T)
+def getClasse(dados):
+    harmonicos_normalizados = getHarmonicos(dados)
     
     predictions = modelo_carregado.predict(harmonicos_normalizados)
     predictions = predictions.round(decimals = 2)

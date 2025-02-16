@@ -78,7 +78,8 @@ def main():
             continue
 
         try:
-            currents_list = [int(x) for x in batch_data]
+            # Converte os valores de float para int, aplicando o fator de escala de 4 casas decimais
+            currents_list = [int(float(x) * 10000) for x in batch_data]
         except Exception as e:
             print(f"Erro ao converter valores do batch {batch_index + 1}: {e}")
             continue
