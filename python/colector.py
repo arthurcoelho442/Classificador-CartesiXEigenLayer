@@ -1,6 +1,5 @@
-import sys
 from rede.classificador import getClasse
-import pandas as pd
+import numpy as np
 
 def main():
     # Configura parâmetros conforme seu código
@@ -10,10 +9,9 @@ def main():
     aux         = 5
     qtd_Dados   = aux * amostras
 
-    # 10, 13, 14, 15
     # Leitura dos dados
-    dados = pd.read_csv("./src/prog2021/L15.csv", delimiter="  ", header=None, engine='python').iloc[:qtd_Dados, 0:1]
-    dados  = pd.DataFrame(dados.values.reshape(-1,1666))
+    dados = np.loadtxt("./src/prog2021_formatado/L13.csv", delimiter=" ")[:qtd_Dados, 0] # Lê os dados diretamente com numpy
+    dados = dados.reshape(-1, 1666)  # Faz o reshape diretamente com numpy
 
     # Obter a classificação
     resultado = getClasse(dados)
