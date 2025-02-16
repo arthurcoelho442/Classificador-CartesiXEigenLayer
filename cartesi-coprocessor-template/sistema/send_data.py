@@ -64,6 +64,9 @@ def main():
     total_batches = total_values // batch_size
     print(f"Total de valores lidos: {total_values}. Batches a enviar: {total_batches}.")
 
+    # Intervalo de envio (5 segundos)
+    interval = 5
+
     # Envio contínuo dos dados, batch por batch
     for batch_index in range(total_batches):
         start_time = time.time()
@@ -87,8 +90,8 @@ def main():
         # Constrói e envia a transação
         try:
             tx = contract.functions.sendData(currents_list, timestamp_value).buildTransaction({
-                'chainId': 1337,  # Ajuste para sua rede (ex.: 1 para Mainnet, 3 para Testnet, 1337 para rede local)
-                'gas': 5000000,   # Estime e ajuste o gas conforme necessário
+                'chainId': 1337,           # Ajuste para sua rede (ex.: 1 para Mainnet, 3 para Testnet, 1337 para rede local)
+                'gas': 5000000,            # Ajuste o gas conforme necessário
                 'gasPrice': web3.toWei('20', 'gwei'),
                 'nonce': nonce,
             })
@@ -99,14 +102,14 @@ def main():
         except Exception as e:
             print(f"Erro ao enviar o batch {batch_index + 1}: {e}")
 
-        # Aguarda o tempo restante para completar 1 segundo (se necessário)
+        # Aguarda o tempo restante para completar o intervalo de 5 segundos
         elapsed = time.time() - start_time
-        if elapsed < 1:
-            sleep_time = 1 - elapsed
-            print(f"Batch {batch_index + 1} enviado. Aguardando {sleep_time:.3f} segundos para sincronizar com 1s.")
+        if elapsed < interval:
+            sleep_time = interval - elapsed
+            print(f"Batch {batch_index + 1} enviado. Aguardando {sleep_time:.3f} segundos para o próximo envio.")
             time.sleep(sleep_time)
         else:
-            print(f"Batch {batch_index + 1} enviado. Tempo decorrido: {elapsed:.3f} segundos (ultrapassou 1s).")
+            print(f"Batch {batch_index + 1} enviado. Tempo decorrido: {elapsed:.3f} segundos.")
 
     print("Envio dos dados concluído.")
 

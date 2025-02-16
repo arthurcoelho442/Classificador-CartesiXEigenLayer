@@ -12,11 +12,16 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     struct DeviceView {
         string name;
         uint256  id;
+    }
+    struct Device {
+        string name;
+        uint256  id;
         DeviceReportView[] data;
     }
+
     struct User {
         string name;
-        DeviceView[]  devices;
+        Device[]  devices;
     }
 
     address public owner;
@@ -42,10 +47,10 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
         users[owner].name = 'owner';
 
         // Add devices using push
-        users[owner].devices.push(DeviceView('Fan', 10, new DeviceReportView[](0)));
-        users[owner].devices.push(DeviceView('Hair cutter', 13, new DeviceReportView[](0)));
-        users[owner].devices.push(DeviceView('Notebook Wanderley', 14, new DeviceReportView[](0)));
-        users[owner].devices.push(DeviceView('Notebook Leo', 15, new DeviceReportView[](0)));
+        users[owner].devices.push(Device('Fan', 10, new DeviceReportView[](0)));
+        users[owner].devices.push(Device('Hair cutter', 13, new DeviceReportView[](0)));
+        users[owner].devices.push(Device('Notebook Wanderley', 14, new DeviceReportView[](0)));
+        users[owner].devices.push(Device('Notebook Leo', 15, new DeviceReportView[](0)));
 
         // ADMIN
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
@@ -92,7 +97,14 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
 
     // get
     function getDevices (address user) public view userExists(user) returns (DeviceView[] memory) {
-        return users[user].devices;
+        uint256 devicesCount = users[user].devices.length;
+        DeviceView[] memory deviceView = new DeviceView[](devicesCount);
+
+        for (uint i = 0; i < devicesCount; i++) {
+            Device memory device = users[user].devices[i];
+            deviceView[i] = DeviceView(device.name, device.id);
+        }
+        return deviceView;
     }
     function getDeviceCurrentData(address user, uint256 id) public view userExists(user) returns (DeviceReportView[] memory) {
         for (uint i = 0; i < users[user].devices.length; i++) {
@@ -121,6 +133,6 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
         for (uint i = 0; i < users[user].devices.length; i++) {
             require(users[user].devices[i].id != id, "Device already exists");
         }
-        users[user].devices.push(DeviceView(name, id, new DeviceReportView[](0)));
+        users[user].devices.push(Device(name, id, new DeviceReportView[](0)));
     }
 }
