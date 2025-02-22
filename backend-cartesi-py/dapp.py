@@ -1,7 +1,6 @@
 from os import environ
 import logging
 import requests
-from eth_utils import decode_hex
 from eth_abi import decode_abi
 
 import tflite_runtime.interpreter as tflite
