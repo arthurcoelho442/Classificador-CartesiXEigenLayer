@@ -1,21 +1,21 @@
-from rede.classificador import getClasse
-import numpy as np
+from rede.classificador3 import getClasse
+import pandas as pd
 
 def main():
     # Configura parâmetros conforme seu código
     frequencia  = 60  # Hz
     T           = 1 / frequencia
     amostras    = int(T * 10**5)
-    aux         = 5
+    aux         = 3
     qtd_Dados   = aux * amostras
 
-    # Leitura dos dados
-    dados = np.loadtxt("./src/prog2021_formatado/L13.csv", delimiter=" ")[:qtd_Dados, 0] # Lê os dados diretamente com numpy
-    dados = dados.reshape(-1, 1666)  # Faz o reshape diretamente com numpy
+    # Leitura dos dados (pandas)
+    dados = pd.read_csv("./src/prog2021/L13.csv", delimiter="  ", header=None, engine='python').iloc[:qtd_Dados, 1:2]
+    dados = pd.DataFrame(dados.values.reshape(-1,1666))
 
     # Obter a classificação
     resultado = getClasse(dados)
-    print(f"{resultado}")
+    print(f"Classe encontrada: {resultado}")
 
 if __name__ == "__main__":
     main()

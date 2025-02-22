@@ -1,10 +1,14 @@
 from os import environ
 import logging
 import requests
-import numpy as np
 from eth_utils import decode_hex
 from eth_abi import decode_abi
+
 import tflite_runtime.interpreter as tflite
+from sklearn.preprocessing import MinMaxScaler
+from scipy import signal
+import pandas as pd
+import numpy as np
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -20,21 +24,7 @@ interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 
-# Função de normalização MinMax ajustada para evitar NaN
-def normalize_minmax(data, feature_range=(0, 1)):
-    min_val, max_val = feature_range
-    data_min = np.min(data, axis=0)
-    data_max = np.max(data, axis=0)
-
-    # Para evitar divisão por zero, substituímos os casos de diferença zero por 1 (não afeta a normalização)
-    diff = data_max - data_min
-    diff[diff == 0] = 1  # Quando a diferença é zero, substituímos por 1
-
-    # Normalização
-    normalized_data = (data - data_min) / diff
-    normalized_data = normalized_data * (max_val - min_val) + min_val
-    
-    return normalized_data
+scaler = MinMaxScaler(feature_range=(0,1))
 
 def getHarmonicos(dados, qtd_Peaks=7):
     frequencia  = 60  # Hz
@@ -42,7 +32,7 @@ def getHarmonicos(dados, qtd_Peaks=7):
     amostras    = int(T * 10**5)
     L = []
     for i in range(0, len(dados)):
-        df = dados[i, :].transpose()
+        df = dados.iloc[i,:].transpose()
 
         # Faz a transformada rápida de fourrier
         fft = np.fft.fft(df)
@@ -51,50 +41,51 @@ def getHarmonicos(dados, qtd_Peaks=7):
         fast = np.fft.fftfreq(amostras, T)
 
         # Seleciona a primeira metade da sequência e normaliza as amplitudes pelo número de amostras (divide por N)
-        freqs = fast[:amostras // 2]
+        freqs = fast[:amostras//2]
 
         # Pega amplitudes
-        amplet = np.abs(fft)[:amostras // 2] / amostras
-        amplet = np.log10(amplet) * 20
+        amplet = np.abs(fft)[:amostras//2] / amostras
+        amplet = np.log10(amplet)*20
 
-        # Encontrar picos sem SciPy
-        derivada = np.diff(amplet)
-        pontos = np.where((derivada[:-1] > 0) & (derivada[1:] < 0))[0]
+        pontos = signal.argrelextrema(amplet, np.greater)
+        pontos = pontos[0]
 
-        peak_x = np.abs(freqs[pontos])[:qtd_Peaks]
-        peak_y = np.abs(amplet[pontos])[:qtd_Peaks]
+        peak_x = list(np.abs(freqs[pontos]))
+        peak_y = list(np.abs(amplet[pontos]))
 
-        lista = np.concatenate((peak_x, peak_y))
+        lista = []
+        for j in range(0, qtd_Peaks, 1):
+            lista.append(peak_x[j])
+
+        for j in range(0, qtd_Peaks, 1):
+            lista.append(peak_y[j])
+
         L.append(lista)
-    return normalize_minmax(np.array(L))  # Agora a lista é convertida para np.array
+        
+    return scaler.fit_transform(pd.DataFrame(L)) #type: ignore
 
 def getClasse(dados):
     harmonicos_normalizados = getHarmonicos(dados)
-    classe = []
+
+    classe = pd.DataFrame()
     for harm in harmonicos_normalizados:
         interpreter.set_tensor(input_details[0]['index'], [harm.astype(np.float32)])
         interpreter.invoke()
         predictions = interpreter.get_tensor(output_details[0]['index'])
         
-        classe.append(predictions.round(2))
-
-    classe = np.array(classe)
-    classe_2d = classe.squeeze()
+        classe = pd.concat([classe, pd.DataFrame(predictions.round(2), columns=[10, 13, 14, 15])])
     
-    print(classe_2d)
+    print(classe)
     
-    label = [10, 13, 14, 15]
-    coluna_maior = np.argmax(classe_2d, axis=1)  # pega a coluna com valor mais próximo de 1
-    # Frequência de cada coluna
-    frequencia_colunas = np.bincount(coluna_maior)
+    coluna_maior  = classe.idxmax(axis=1) # pega coluna com valor mais proximo de 1
+    # frequência de cada coluna
+    frequencia_colunas = coluna_maior.value_counts()
     # Coluna que aparece mais vezes
-    coluna_mais_frequente = np.argmax(frequencia_colunas)
+    coluna_mais_frequente = frequencia_colunas.idxmax()
 
-    frequencia_colunas = { l: freq for l, freq in zip(label, frequencia_colunas)}
-    
-    print("Coluna que aparece mais vezes como a maior:", label[coluna_mais_frequente])
-    print(f"Frequência das colunas:\n{frequencia_colunas}")  # pega a coluna com valor mais próximo de 1
-    return label[coluna_mais_frequente]
+    print("Coluna que aparece mais vezes como a maior:", coluna_mais_frequente)
+    print("Frequência das colunas:\n", frequencia_colunas) # pega coluna com valor mais proximo de 1
+    return coluna_mais_frequente
 
 # Função para emitir o aviso
 def emit_notice(data):
@@ -119,8 +110,8 @@ def handle_advance(data):
         payload_bytes = bytes.fromhex(payload_hex[2:])
         
         # Decodificando os dados (supondo que seja um vetor de uint256)
-        decoded_data = decode_abi(['uint256[]'], decode_hex(payload_bytes))[0]
-        
+        decoded_data = decode_abi(['uint256[]'], payload_bytes)[0]
+
         # Convertendo os valores para float (dividindo por 10000)
         currents_in_float = convert_to_float(decoded_data)
 
@@ -130,16 +121,16 @@ def handle_advance(data):
             return "reject"
 
         # Criando o array numpy e aplicando o reshape
-        dados = np.array(currents_in_float).reshape(-1, 1666)
-
+        dados = pd.DataFrame(currents_in_float.reshape(-1,1666))
+        
         # Calculando a classe com a função getClasse
         classe = getClasse(dados)
 
         # Calculando a média dos dados
-        mean_current = np.mean(dados) * 10000
+        mean_current = int(dados.mean().mean() * 10000)
 
         # Emitindo o aviso com o resultado
-        payload = {"payload": f"{classe},{int(mean_current)}"}
+        payload = {"payload": f"{classe},{mean_current}"}
         emit_notice(payload)
 
         return "accept"

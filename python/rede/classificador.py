@@ -59,6 +59,7 @@ def getHarmonicos(dados, qtd_Peaks=7):
 
 def getClasse(dados):
     harmonicos_normalizados = getHarmonicos(dados)
+    
     classe = []
     for harm in harmonicos_normalizados:
         interpreter.set_tensor(input_details[0]['index'], [harm.astype(np.float32)])
