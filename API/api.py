@@ -13,6 +13,7 @@ app = Flask(__name__)
 
 # Carregar o modelo
 modelo_carregado = load_model('./src/classificador.h5')
+scaler = MinMaxScaler(feature_range=(0, 1))
 
 frequencia = 60  # Hz
 T = 1 / frequencia
@@ -35,8 +36,6 @@ def getHarmonicos(dados, qtd_Peaks=7):
 
         lista = peak_x + peak_y
         L.append(lista)
-    
-    scaler = MinMaxScaler(feature_range=(0, 1))
     return scaler.fit_transform(pd.DataFrame(L))
 
 def getClasse(dados):
