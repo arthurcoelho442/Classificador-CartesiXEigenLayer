@@ -1,0 +1,133 @@
+Número de amostras em um ciclo de 60 Hz
+
+Set 1:
+L0
+Lâmpada 15w
+Tomada 1
+
+L1
+Lâmpada 15w
+Tomada 3
+
+L2
+Lâmpada Led 12w
+Tomada 1
+
+L3
+Lâmpada Led 7w
+Tomada 1
+
+L4
+Roteador Intelbrás
+Tomada 4
+
+L5
+Roteador DLink
+Tomada 4
+
+L6
+Roteador DLink
+Tomada 2
+
+L7
+Carregador ASUS
+Tomada 3
+
+L8
+Carregador Samsung
+Tomada 3
+
+L9
+Luminária halógena
+Tomada 2
+
+L10
+Ventilador
+Velocidade Máxima, parado
+E2
+
+L11
+Ventilador
+Velocidade Média, parado
+E2
+
+L12
+Ventilador
+Velocidade Mínima, parado
+E2
+
+L13
+Cortador de cabelo
+E3
+
+
+L14
+Notebook Wanderley
+E2
+
+L15
+Notebook Léo
+E2
+
+
+
+Set2
+L0
+Ferro Elétrico (máx, sem vapor)
+E3
+
+L1
+Espremedor
+E4
+
+
+L2
+Espremedor
+E3
+
+L3
+Liquidificador
+E3
+
+L4
+George Foreman
+E2
+
+
+L5
+George Foreman
+E1
+
+L6
+Carregador Asus E2 + Lâmpada 12w E4
+
+L7
+Carregador Asus E2 + Lâmpada 12w E4 + Roteador Intelbrás E1
+
+L8
+Carregador Asus E2 + Lâmpada 12w E4 + Roteador Intelbrás E1 + Lâmpada 7w E3
+
+L9
+Carregador Asus E2 + Misteira E4 + Roteador Intelbrás E1 + Lâmpada 7w E3
+
+L10
+Lâmpada 7w E3 + Notebook Léo E2
+
+L11
+Carregador ASUS E2 + Espremedor E1
+
+L12
+GF Grill E4 + Ferro E2
+
+L13
+Roteador Intelbrás E1 + Roteador D-Link E2 + Carregador ASUS
+
+L14
+Roteador Intelbrás E1 + Roteador D-Link E2 + Carregador ASUS + Lâmpada Led 12W E4
+
+L15
+Notebook Léo E1 + Roteador D-Link E2 + Carregador ASUS + Lâmpada Led 12W E4
+
+
+
+
