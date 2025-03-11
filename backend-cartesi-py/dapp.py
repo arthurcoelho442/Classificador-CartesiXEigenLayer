@@ -64,7 +64,7 @@ def handle_advance(data):
             return "reject"
 
         # Calculando a média dos dados
-        mean_current = int(sum(sum(sublist) for sublist in dados) / len(currents_in_float) * 10000)
+        mean_current = int(sum(sum(sublist) for sublist in dados) / len(currents_in_float))
 
         # Emitindo o aviso com o resultado
         payload = {"payload": f"{classe},{mean_current}"}

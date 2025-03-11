@@ -39,7 +39,7 @@ def getHarmonicos(dados, qtd_Peaks=7):
     return scaler.fit_transform(pd.DataFrame(L))
 
 def getClasse(dados):
-    harmonicos_normalizados = getHarmonicos(dados)
+    harmonicos_normalizados = getHarmonicos(dados/1000)
     predictions = modelo_carregado.predict(harmonicos_normalizados)
     predictions = predictions.round(decimals=2)
     

@@ -9,9 +9,7 @@ RUN <<EOF
 set -e
 apt-get update
 apt-get install -y --no-install-recommends \
-  busybox-static=1:1.30.1-7ubuntu3 \
-  build-essential \
-  libopenblas0-serial libgomp1 libtiff5 libjpeg8 libopenjp2-7 zlib1g libfreetype6 liblcms2-2 libwebp7 libharfbuzz0b libfribidi0 libxcb1 libatomic1
+  busybox-static=1:1.30.1-7ubuntu3
 rm -rf /var/lib/apt/lists/* /var/log/* /var/cache/*
 useradd --create-home --user-group dapp
 EOF
@@ -24,12 +22,11 @@ RUN dpkg -i /machine-emulator-tools-v${MACHINE_EMULATOR_TOOLS_VERSION}.deb \
 ENV PATH="/opt/cartesi/bin:${PATH}"
 
 WORKDIR /opt/cartesi/dapp
-
-COPY . .
+COPY ./requirements.txt .
 
 RUN <<EOF
 set -e
-pip install --no-cache --no-build-isolation -r requirements.txt --no-cache
+pip install -r requirements.txt --no-cache
 find /usr/local/lib -type d -name __pycache__ -exec rm -r {} +
 EOF
 
