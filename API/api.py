@@ -39,7 +39,7 @@ def getHarmonicos(dados, qtd_Peaks=7):
     return scaler.fit_transform(pd.DataFrame(L))
 
 def getClasse(dados):
-    harmonicos_normalizados = getHarmonicos(dados/1000)
+    harmonicos_normalizados = getHarmonicos(dados)
     predictions = modelo_carregado.predict(harmonicos_normalizados)
     predictions = predictions.round(decimals=2)
     
@@ -56,7 +56,13 @@ def classificar():
         if not dados:
             return jsonify({"erro": "Nenhum dado fornecido."}), 400
         
-        resultado = getClasse(dados)
+        # Converter para DataFrame e dividir por 1000
+        df = pd.DataFrame(dados) / 10000
+        print(df)
+        # Converter de volta para lista de listas para compatibilidade com `getClasse`
+        dados_processados = df.values.tolist()
+        
+        resultado = getClasse(dados_processados)
         return jsonify({"classe": resultado})
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
