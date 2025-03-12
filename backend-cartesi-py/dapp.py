@@ -30,10 +30,6 @@ def emit_notice(data):
     else:
         logger.error(f"Failed to emit notice with data: {data}. Status code: {response.status_code}")
 
-# Função para converter os dados de uint256 para float (dividindo por 10000)
-def convert_to_float(data, scale_factor=10000):
-    return [x / scale_factor for x in data]
-
 # Função para lidar com o payload recebido, processando os dados e aplicando o reshape
 def handle_advance(data):
     logger.info(f"Received advance request data {data}")
@@ -46,16 +42,13 @@ def handle_advance(data):
         # Decodificando os dados (supondo que seja um vetor de uint256)
         decoded_data = decode_abi(['uint256[]'], payload_bytes)[0]
 
-        # Convertendo os valores para float (dividindo por 10000)
-        currents_in_float = convert_to_float(decoded_data)
-
         # Verificando se o número de elementos é divisível por 1666
-        if len(currents_in_float) % 1666 != 0:
+        if len(decoded_data) % 1666 != 0:
             logger.error("O número de elementos não é divisível por 1666.")
             return "reject"
 
         # Criando uma lista de listas (reshape manual)
-        dados = [currents_in_float[i:i + 1666] for i in range(0, len(currents_in_float), 1666)]
+        dados = [decoded_data[i:i + 1666] for i in range(0, len(decoded_data), 1666)]
         
         # Calculando a classe com a função getClasse
         classe = getClasse(dados)
@@ -64,7 +57,7 @@ def handle_advance(data):
             return "reject"
 
         # Calculando a média dos dados
-        mean_current = int(sum(sum(sublist) for sublist in dados) / len(currents_in_float))
+        mean_current = int(sum(sum(sublist) for sublist in dados) / len(decoded_data))
 
         # Emitindo o aviso com o resultado
         payload = {"payload": f"{classe},{mean_current}"}
