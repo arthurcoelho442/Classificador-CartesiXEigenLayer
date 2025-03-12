@@ -11,7 +11,7 @@ services:
 
   api:
     build:
-      context: ./api
+      context: ./src/api
     container_name: api-container
     ports:
       - "5000:5000"
