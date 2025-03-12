@@ -12,7 +12,7 @@ tf.get_logger().setLevel('ERROR')
 app = Flask(__name__)
 
 # Carregar o modelo
-modelo_carregado = load_model('./src/classificador.h5')
+modelo_carregado = load_model('./classificador.h5')
 scaler = MinMaxScaler(feature_range=(0, 1))
 
 frequencia = 60  # Hz
@@ -68,4 +68,4 @@ def classificar():
         return jsonify({"erro": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

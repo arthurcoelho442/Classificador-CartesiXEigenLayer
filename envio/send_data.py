@@ -16,12 +16,12 @@ def main():
     # Conectar ao nó Ethereum
     provider_url = "http://127.0.0.1:8545"  # Ajuste conforme seu provider
     web3 = Web3(Web3.HTTPProvider(provider_url))
-    if not web3.isConnected():
+    if not web3.is_connected():
         print("Erro ao conectar no nó Ethereum.")
         return
 
     # Configurações do contrato
-    contract_address = web3.toChecksumAddress("0xSeuEnderecoDoContrato")  # Substitua pelo endereço do seu contrato
+    contract_address = web3.to_checksum_address("0xSeuEnderecoDoContrato")  # Substitua pelo endereço do seu contrato
     contract_abi = json.loads('''
     [
         {
@@ -47,7 +47,7 @@ def main():
     contract = web3.eth.contract(address=contract_address, abi=contract_abi)
 
     # Configurações da conta que enviará as transações
-    account_address = web3.toChecksumAddress("0xSeuEnderecoDaConta")  # Substitua pelo seu endereço
+    account_address = web3.to_checksum_address("0xSeuEnderecoDaConta")  # Substitua pelo seu endereço
     private_key = "sua_chave_privada_aqui"  # Substitua pela sua chave privada (mantenha-a segura!)
     nonce = web3.eth.get_transaction_count(account_address)
 

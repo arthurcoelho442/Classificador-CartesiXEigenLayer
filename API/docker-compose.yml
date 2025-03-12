@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  proxy:
+    image: nginx:latest
+    container_name: nginx_proxy_classificador
+    ports:
+      - "80:80"  # Porta externa 80 mapeada para a porta 80 do container
+    volumes:
+      - ./src/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+  api:
+    build:
+      context: ./api
+    container_name: api-container
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./src/api:/api
+    restart: unless-stopped
