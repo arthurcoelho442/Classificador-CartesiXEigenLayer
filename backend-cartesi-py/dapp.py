@@ -1,7 +1,6 @@
 from os import environ
 import logging
 import requests
-from eth_abi import decode_abi
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -30,6 +29,12 @@ def emit_notice(data):
     else:
         logger.error(f"Failed to emit notice with data: {data}. Status code: {response.status_code}")
 
+# Função para decodificar uint256[] manualmente
+def decode_uint256_array(payload_bytes):
+    uint_size = 32  # 32 bytes por uint256
+    num_elements = len(payload_bytes) // uint_size  # Número de elementos no array
+    return [int.from_bytes(payload_bytes[i * uint_size: (i + 1) * uint_size], "big") for i in range(num_elements)]
+
 # Função para lidar com o payload recebido, processando os dados e aplicando o reshape
 def handle_advance(data):
     logger.info(f"Received advance request data {data}")
@@ -40,8 +45,8 @@ def handle_advance(data):
         payload_bytes = bytes.fromhex(payload_hex[2:])
         
         # Decodificando os dados (supondo que seja um vetor de uint256)
-        decoded_data = decode_abi(['uint256[]'], payload_bytes)[0]
-
+        decoded_data = decode_uint256_array(payload_bytes)
+        
         # Verificando se o número de elementos é divisível por 1666
         if len(decoded_data) % 1666 != 0:
             logger.error("O número de elementos não é divisível por 1666.")
