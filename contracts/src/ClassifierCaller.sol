@@ -6,12 +6,12 @@ import "../lib/node_modules/@openzeppelin/contracts/access/AccessControl.sol";
 
 contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     struct DeviceReportView {
-        uint256 current;    // in amper
+        int256 current;    // in amper
         uint256 timestamp;  // unix timestamp
     }
     struct DeviceView {
         string name;
-        uint256  id;
+        int256  id;
     }
     struct User {
         string name;
@@ -21,7 +21,7 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     address public owner;
     address[] public userAddresses;
     mapping(address => User) public users;
-    mapping(address => mapping(uint256 => DeviceReportView[]))
+    mapping(address => mapping(int256 => DeviceReportView[]))
             public deviceData;
 
     mapping(bytes32 => address) public requestSender;
@@ -64,7 +64,7 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
 
         require(notice.length >= 64, "Invalid notice length");
 
-        (uint256 id, uint256 current) = abi.decode(notice, (uint256, uint256));
+        (int256 id, int256 current) = abi.decode(notice, (int256, int256));
         deviceData[sender][id].push(DeviceReportView(current, timestamp));
 
         delete requestSender[inputPayloadHash];
@@ -74,8 +74,8 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     }
 
     // send
-    function sendData(uint256[] memory currents, uint256 timestamp) external userExists(msg.sender) {
-        // Verifica se o array de currents tem exatamente 100.000 elementos
+    function sendData(int256[] memory currents, uint256 timestamp) external userExists(msg.sender) {
+        // Verifica se o array de currents tem exatamente 4998 elementos
         // require(currents.length == 4998, "The batch must contain exactly 4998 current values.");
 
         bytes memory input = abi.encode(currents);
@@ -98,7 +98,7 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
         }
         return deviceView;
     }
-    function getDeviceCurrentData(address user, uint256 id) public view userExists(user) returns (DeviceReportView[] memory) {
+    function getDeviceCurrentData(address user, int256 id) public view userExists(user) returns (DeviceReportView[] memory) {
         for (uint i = 0; i < users[user].devices.length; i++) {
             if (users[user].devices[i].id == id){
                 uint256 dataLength = deviceData[user][id].length;
@@ -121,7 +121,7 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
         users[user].name = name;
         userAddresses.push(user);
     }
-    function addDevice(address user, string memory name, uint256 id) external userExists(user) onlySuperAdmin {
+    function addDevice(address user, string memory name, int256 id) external userExists(user) onlySuperAdmin {
         for (uint i = 0; i < users[user].devices.length; i++) {
             require(users[user].devices[i].id != id, "Device already exists");
         }

@@ -30,11 +30,10 @@ def emit_notice(data):
         logger.error(f"Failed to emit notice with data: {data}. Status code: {response.status_code}")
 
 # Função para decodificar uint256[] manualmente
-def decode_uint256_array(payload_bytes):
-    uint_size = 32  # 32 bytes por uint256
-    num_elements = len(payload_bytes) // uint_size  # Número de elementos no array
-    return [int.from_bytes(payload_bytes[i * uint_size: (i + 1) * uint_size], "big") for i in range(num_elements)]
-
+def decode_int256_array(payload_bytes):
+    int_size = 32  # 32 bytes por int256
+    num_elements = len(payload_bytes) // int_size  # Número de elementos no array
+    return [int.from_bytes(payload_bytes[i * int_size: (i + 1) * int_size], "big", signed=True) for i in range(num_elements)]
 
 def handle_advance(data):
     logger.info(f"Received advance request data {data}")
@@ -45,7 +44,7 @@ def handle_advance(data):
         payload_bytes = bytes.fromhex(payload_hex[2:])
         
         # Decodificando os dados (supondo que seja um vetor de uint256)
-        decoded_data = decode_uint256_array(payload_bytes)
+        decoded_data = decode_int256_array(payload_bytes)
 
         decoded_data = decoded_data[2:]
 
@@ -66,8 +65,12 @@ def handle_advance(data):
         # Calculando a média dos dados
         mean_current = int(sum(sum(sublist) for sublist in dados) / len(decoded_data))
 
+        # Convertendo a resposta para hexadecimal
+        classe_hex = f"0x{classe:064x}"
+        mean_current_hex = f"0x{mean_current:064x}"
+        
         # Emitindo o aviso com o resultado
-        payload = {"payload": f"{classe},{mean_current}"}
+        payload = {"payload": f"{classe_hex},{mean_current_hex}"}
         emit_notice(payload)
 
         return "accept"

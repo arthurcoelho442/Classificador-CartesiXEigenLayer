@@ -21,7 +21,7 @@ def main():
         return
 
     # Configurações do contrato
-    contract_address = web3.to_checksum_address("0xB0D4afd8879eD9F52b28595d31B441D079B2Ca07")  # Substitua pelo endereço do seu contrato
+    contract_address = web3.to_checksum_address("0xSeuEnderecoDoContrato")  # Substitua pelo endereço do seu contrato
     contract_abi = json.loads('''
     [
         {
@@ -47,7 +47,7 @@ def main():
     contract = web3.eth.contract(address=contract_address, abi=contract_abi)
 
     # Configurações da conta que enviará as transações
-    account_address = web3.to_checksum_address("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")  # Substitua pelo seu endereço
+    account_address = web3.to_checksum_address("0xSeuEnderecoDaConta")  # Substitua pelo seu endereço
     private_key = "sua_chave_privada_aqui"  # Substitua pela sua chave privada (mantenha-a segura!)
     nonce = web3.eth.get_transaction_count(account_address)
 
@@ -79,7 +79,7 @@ def main():
 
         try:
             # Converte os valores de float para int, aplicando o fator de escala de 4 casas decimais
-            currents_list = [abs(int(float(x) * 10000)) for x in batch_data]
+            currents_list = [int(float(x) * 10000) for x in batch_data]
         except Exception as e:
             print(f"Erro ao converter valores do batch {batch_index + 1}: {e}")
             continue
@@ -90,15 +90,15 @@ def main():
 
         # Constrói e envia a transação
         try:
-            tx = contract.functions.sendData(currents_list, timestamp_value).build_transaction({
+            tx = contract.functions.sendData(currents_list, timestamp_value).build_ransaction({
                 'chainId': 1337,           # Ajuste para sua rede (ex.: 1 para Mainnet, 3 para Testnet, 1337 para rede local)
                 'gas': 5000000,            # Ajuste o gas conforme necessário
-                'gasPrice': web3.to_wei('20', 'gwei'),
+                'gasPrice': web3.toWei('20', 'gwei'),
                 'nonce': nonce,
             })
-            # signed_tx = web3.eth.account.sign_transaction(tx, private_key=private_key)
-            # tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-            # print(f"Batch {batch_index + 1} enviado. Tx hash: {web3.toHex(tx_hash)}")
+            signed_tx = web3.eth.account.sign_transaction(tx, private_key=private_key)
+            tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+            print(f"Batch {batch_index + 1} enviado. Tx hash: {web3.toHex(tx_hash)}")
             nonce += 1  # Incrementa o nonce para a próxima transação
         except Exception as e:
             print(f"Erro ao enviar o batch {batch_index + 1}: {e}")
@@ -111,8 +111,6 @@ def main():
             time.sleep(sleep_time)
         else:
             print(f"Batch {batch_index + 1} enviado. Tempo decorrido: {elapsed:.3f} segundos.")
-
-        break
 
     print("Envio dos dados concluído.")
 
