@@ -10,7 +10,7 @@ rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
 
 # URL da API externa
-api_url = "http://host.docker.internal:5000/getClasse"
+api_url = "https://classificador.alljelly.cloud/classificar"
 
 def getClasse(dados):
     # Envia os dados para a API externa e recebe a classe
@@ -46,6 +46,8 @@ def handle_advance(data):
         
         # Decodificando os dados (supondo que seja um vetor de uint256)
         decoded_data = decode_uint256_array(payload_bytes)
+
+        decoded_data = decoded_data[2:]
 
         # Verificando se o número de elementos é divisível por 1666
         if len(decoded_data) % 1666 != 0:

@@ -2,16 +2,16 @@
 pragma solidity ^0.8.28;
 
 import {Script} from "../lib/forge-std/src/Script.sol";
-import {CounterCaller} from "../src/CounterCaller.sol";
+import {ClassifierCaller} from "../src/ClassifierCaller.sol";
 
 contract DeployCounterCaller is Script {
-    function run() external returns (CounterCaller) {
+    function run() external returns (ClassifierCaller) {
         // These values should be replaced with your actual values
         address coprocessorAddress = vm.envAddress("COPROCESSOR_ADDRESS");
         bytes32 machineHash = vm.envBytes32("MACHINE_HASH");
 
         vm.startBroadcast();
-        CounterCaller counter = new CounterCaller(
+        ClassifierCaller counter = new ClassifierCaller(
             coprocessorAddress,
             machineHash
         );
