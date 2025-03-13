@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "./lib/coprocessor-base-contract/src/CoprocessorAdapter.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "../lib/coprocessor-base-contract/src/CoprocessorAdapter.sol";
+import "../lib/node_modules/@openzeppelin/contracts/access/AccessControl.sol";
 
 contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     struct DeviceReportView {
-        uint256 current;    // in amper
+        int256 current;    // in amper
         uint256 timestamp;  // unix timestamp
     }
     struct DeviceView {
@@ -24,8 +24,8 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     mapping(address => mapping(uint256 => DeviceReportView[]))
             public deviceData;
 
-    mapping(bytes32 => address) private requestSender;
-    mapping(bytes32 => uint256) private requestTimestamp;
+    mapping(bytes32 => address) public requestSender;
+    mapping(bytes32 => uint256) public requestTimestamp;
     
     event ResultReceived(bytes32 indexed inputPayloadHash, bytes output);
 
@@ -53,7 +53,7 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
         _grantRole(DEFAULT_ADMIN_ROLE, owner);
     }
 
-    function runExecution(bytes memory input) internal {
+    function runExecution(bytes calldata input) external {
         callCoprocessor(input);
     }
 
@@ -64,7 +64,7 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
 
         require(notice.length >= 64, "Invalid notice length");
 
-        (uint256 id, uint256 current) = abi.decode(notice, (uint256, uint256));
+        (uint256 id, int256 current) = abi.decode(notice, (uint256, int256));
         deviceData[sender][id].push(DeviceReportView(current, timestamp));
 
         delete requestSender[inputPayloadHash];
@@ -74,9 +74,9 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     }
 
     // send
-    function sendData(uint256[] memory currents, uint256 timestamp) external userExists(msg.sender) {
+    function sendData(int256[] memory currents, uint256 timestamp) external userExists(msg.sender) {
         // Verifica se o array de currents tem exatamente 100.000 elementos
-        require(currents.length == 4998, "The batch must contain exactly 4998 current values.");
+        // require(currents.length == 4998, "The batch must contain exactly 4998 current values.");
 
         bytes memory input = abi.encode(currents);
         bytes32 requestHash = keccak256(input);
@@ -84,7 +84,7 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
         requestSender[requestHash]      = msg.sender;
         requestTimestamp[requestHash]   = timestamp;
 
-        runExecution(input);
+        this.runExecution(input);
     }
 
     // get

@@ -90,7 +90,7 @@ def main():
 
         # Constrói e envia a transação
         try:
-            tx = contract.functions.sendData(currents_list, timestamp_value).buildTransaction({
+            tx = contract.functions.sendData(currents_list, timestamp_value).build_ransaction({
                 'chainId': 1337,           # Ajuste para sua rede (ex.: 1 para Mainnet, 3 para Testnet, 1337 para rede local)
                 'gas': 5000000,            # Ajuste o gas conforme necessário
                 'gasPrice': web3.toWei('20', 'gwei'),

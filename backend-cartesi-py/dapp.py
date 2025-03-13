@@ -1,6 +1,7 @@
 from os import environ
 import logging
 import requests
+import json
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -9,7 +10,7 @@ rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
 
 # URL da API externa
-api_url = "http://localhost:5000/getClasse"
+api_url = "https://classificador.alljelly.cloud/classificar"
 
 def getClasse(dados):
     # Envia os dados para a API externa e recebe a classe
@@ -19,8 +20,7 @@ def getClasse(dados):
     else:
         logger.error(f"Erro ao chamar API externa: {response.status_code}")
         return None
-
-# Função para emitir o aviso
+    
 def emit_notice(data):
     notice_payload = {"payload": data["payload"]}
     response = requests.post(rollup_server + "/notice", json=notice_payload)
@@ -30,12 +30,11 @@ def emit_notice(data):
         logger.error(f"Failed to emit notice with data: {data}. Status code: {response.status_code}")
 
 # Função para decodificar uint256[] manualmente
-def decode_uint256_array(payload_bytes):
-    uint_size = 32  # 32 bytes por uint256
-    num_elements = len(payload_bytes) // uint_size  # Número de elementos no array
-    return [int.from_bytes(payload_bytes[i * uint_size: (i + 1) * uint_size], "big") for i in range(num_elements)]
+def decode_int256_array(payload_bytes):
+    int_size = 32  # 32 bytes por int256
+    num_elements = len(payload_bytes) // int_size  # Número de elementos no array
+    return [int.from_bytes(payload_bytes[i * int_size: (i + 1) * int_size], "big", signed=True) for i in range(num_elements)]
 
-# Função para lidar com o payload recebido, processando os dados e aplicando o reshape
 def handle_advance(data):
     logger.info(f"Received advance request data {data}")
     payload_hex = data['payload']
@@ -45,8 +44,10 @@ def handle_advance(data):
         payload_bytes = bytes.fromhex(payload_hex[2:])
         
         # Decodificando os dados (supondo que seja um vetor de uint256)
-        decoded_data = decode_uint256_array(payload_bytes)
-        
+        decoded_data = decode_int256_array(payload_bytes)
+
+        decoded_data = decoded_data[2:]
+
         # Verificando se o número de elementos é divisível por 1666
         if len(decoded_data) % 1666 != 0:
             logger.error("O número de elementos não é divisível por 1666.")
@@ -71,7 +72,7 @@ def handle_advance(data):
         return "accept"
     
     except Exception as error:
-        logger.error(f"Erro ao processar dados: {error}")
+        print(f"Error processing payload: {error}")
         return "reject"
 
 handlers = {
