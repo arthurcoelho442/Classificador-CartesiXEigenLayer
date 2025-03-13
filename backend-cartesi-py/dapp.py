@@ -65,8 +65,12 @@ def handle_advance(data):
         # Calculando a média dos dados
         mean_current = int(sum(sum(sublist) for sublist in dados) / len(decoded_data))
 
+        # Convertendo a resposta para hexadecimal
+        classe_hex = f"0x{classe:064x}"
+        mean_current_hex = f"0x{mean_current:064x}"
+        
         # Emitindo o aviso com o resultado
-        payload = {"payload": f"{classe},{mean_current}"}
+        payload = {"payload": f"{classe_hex},{mean_current_hex}"}
         emit_notice(payload)
 
         return "accept"
