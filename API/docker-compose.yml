@@ -9,4 +9,10 @@ services:
       - "5000:5000"
     volumes:
       - ./src/api:/api
+    networks:
+      - coprocessor-network
     restart: unless-stopped
+
+networks:
+  coprocessor-network:
+    external: true

@@ -10,7 +10,7 @@ rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
 
 # URL da API externa
-api_url = "https://classificador.alljelly.cloud/classificar"
+api_url = "http://127.0.0.1:5000/"
 
 def getClasse(dados):
     # Envia os dados para a API externa e recebe a classe
@@ -63,14 +63,14 @@ def handle_advance(data):
             return "reject"
 
         # Calculando a média dos dados
-        mean_current = int(sum(sum(sublist) for sublist in dados) / len(decoded_data))
+        mean_current = int((sum(sum(sublist) for sublist in dados)) / len(decoded_data))
 
         # Convertendo a resposta para hexadecimal
-        classe_hex = f"0x{classe:064x}"
-        mean_current_hex = f"0x{mean_current:064x}"
-        
+        payload_bytes = bytes.fromhex(f"{classe:064x}") + bytes.fromhex(f"{mean_current:064x}")
+
         # Emitindo o aviso com o resultado
-        payload = {"payload": f"{classe_hex},{mean_current_hex}"}
+        payload = {"payload": f"0x{payload_bytes.hex()}"}
+
         emit_notice(payload)
 
         return "accept"

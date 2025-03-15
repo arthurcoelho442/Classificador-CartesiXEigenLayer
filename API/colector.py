@@ -18,7 +18,7 @@ def main():
 
     # Enviar requisição para a API
     # url = "http://localhost:5000/classificar"
-    url = "https://classificador.alljelly.cloud/classificar"
+    url = "http://localhost:5000/"
     response = requests.post(url, json=dados_json)
     
     if response.status_code == 200:
