@@ -1,7 +1,11 @@
 from os import environ
 import logging
 import requests
-import json
+import tflite_runtime.interpreter as tflite
+from scipy import signal
+import pandas as pd
+import numpy as np
+from eth_abi import encode
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -9,17 +13,58 @@ logger = logging.getLogger(__name__)
 rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
 
-# URL da API externa
-api_url = "http://127.0.0.1:5000/"
+# Carregar modelo TFLite
+interpreter = tflite.Interpreter(model_path="./classificador.tflite")
+interpreter.allocate_tensors()
+
+# Obter informações do modelo
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
+frequencia = 60  # Hz
+T = 1 / frequencia
+amostras = int(T * 10**5)
+
+def normalize_features(data):
+    """ Normaliza os dados dividindo pelo valor máximo de cada característica """
+    max_values = np.max(data, axis=0, keepdims=True)
+    max_values[max_values == 0] = 1  # Evitar divisão por zero
+    return data / max_values
+
+def getHarmonicos(dados, qtd_Peaks=7):
+    L = []
+    for i in range(len(dados)):
+        df = pd.Series(dados[i])
+
+        fft = np.fft.fft(df)
+        fast = np.fft.fftfreq(amostras, T)
+        freqs = fast[:amostras//2]
+        amplet = np.abs(fft)[:amostras//2] / amostras
+        amplet = np.log10(amplet) * 20
+
+        pontos = signal.argrelextrema(amplet, np.greater)[0]
+        peak_x = list(np.abs(freqs[pontos]))[:qtd_Peaks]
+        peak_y = list(np.abs(amplet[pontos]))[:qtd_Peaks]
+
+        lista = peak_x + peak_y
+        L.append(lista)
+    return normalize_features(np.array(L))
 
 def getClasse(dados):
-    # Envia os dados para a API externa e recebe a classe
-    response = requests.post(api_url, json={"dados": dados})
-    if response.status_code == 200:
-        return response.json()["classe"]
-    else:
-        logger.error(f"Erro ao chamar API externa: {response.status_code}")
-        return None
+    harmonicos_normalizados = getHarmonicos(dados)    
+    classe = pd.DataFrame()
+    for harm in harmonicos_normalizados:
+        interpreter.set_tensor(input_details[0]['index'], [harm.astype(np.float32)])
+        interpreter.invoke()
+        predictions = interpreter.get_tensor(output_details[0]['index'])
+    
+        classe = pd.concat([classe, pd.DataFrame(predictions.round(decimals = 2), columns=[10, 13, 14, 15])])
+    
+    print(classe)
+    coluna_maior = classe.idxmax(axis=1)
+    coluna_mais_frequente = coluna_maior.value_counts().idxmax()
+    
+    return int(coluna_mais_frequente)
     
 def emit_notice(data):
     notice_payload = {"payload": data["payload"]}
@@ -57,7 +102,9 @@ def handle_advance(data):
         dados = [decoded_data[i:i + 1666] for i in range(0, len(decoded_data), 1666)]
         
         # Calculando a classe com a função getClasse
-        classe = getClasse(dados)
+        # classe = getClasse(dados)
+
+        classe = 10
 
         if classe is None:
             return "reject"
@@ -66,10 +113,19 @@ def handle_advance(data):
         mean_current = int((sum(sum(sublist) for sublist in dados)) / len(decoded_data))
 
         # Convertendo a resposta para hexadecimal
-        payload_bytes = bytes.fromhex(f"{classe:064x}") + bytes.fromhex(f"{mean_current:064x}")
+        # payload_bytes = bytes.fromhex(f"{classe:064x}") + bytes.fromhex(f"{mean_current:064x}")
+
+        # ABI encode the data
+        encoded_data = encode(
+            ['int256', 'int256'],
+            [classe, mean_current]
+        )
+        
+        # Convert to hex and emit notice
+        hex_data = "0x" + encoded_data.hex()
 
         # Emitindo o aviso com o resultado
-        payload = {"payload": f"0x{payload_bytes.hex()}"}
+        payload = {"payload": hex_data}
 
         emit_notice(payload)
 

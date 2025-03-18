@@ -2,14 +2,18 @@
 FROM --platform=linux/riscv64 cartesi/python:3.10-slim-jammy
 
 LABEL io.cartesi.rollups.sdk_version=0.11.1
-LABEL io.cartesi.rollups.ram_size=128Mi
+LABEL io.cartesi.rollups.ram_size=256Mi
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN <<EOF
 set -e
 apt-get update
 apt-get install -y --no-install-recommends \
-  busybox-static=1:1.30.1-7ubuntu3
+  busybox-static=1:1.30.1-7ubuntu3 \
+  libopenblas-dev=0.3.20+ds-1 \
+  libatomic1 \
+  libjpeg-dev \
+  zlib1g-dev
 rm -rf /var/lib/apt/lists/* /var/log/* /var/cache/*
 useradd --create-home --user-group dapp
 EOF
@@ -23,6 +27,7 @@ ENV PATH="/opt/cartesi/bin:${PATH}"
 
 WORKDIR /opt/cartesi/dapp
 COPY ./requirements.txt .
+COPY ./classificador.tflite .
 
 RUN <<EOF
 set -e
