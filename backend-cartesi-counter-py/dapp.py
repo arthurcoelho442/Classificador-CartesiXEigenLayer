@@ -1,7 +1,11 @@
 from os import environ
 import logging
 import requests
-import json
+import tflite_runtime.interpreter as tflite
+from sklearn.preprocessing import MinMaxScaler
+from scipy import signal
+import pandas as pd
+import numpy as np
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -9,17 +13,53 @@ logger = logging.getLogger(__name__)
 rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
 
-# URL da API externa
-api_url = "http://127.0.0.1:5000/"
+# Carregar modelo TFLite
+interpreter = tflite.Interpreter(model_path="./classificador.tflite")
+interpreter.allocate_tensors()
+
+# Obter informações do modelo
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+scaler = MinMaxScaler(feature_range=(0, 1))
+
+frequencia = 60  # Hz
+T = 1 / frequencia
+amostras = int(T * 10**5)
+
+def getHarmonicos(dados, qtd_Peaks=7):
+    L = []
+    for i in range(len(dados)):
+        df = pd.Series(dados[i])
+
+        fft = np.fft.fft(df)
+        fast = np.fft.fftfreq(amostras, T)
+        freqs = fast[:amostras//2]
+        amplet = np.abs(fft)[:amostras//2] / amostras
+        amplet = np.log10(amplet) * 20
+
+        pontos = signal.argrelextrema(amplet, np.greater)[0]
+        peak_x = list(np.abs(freqs[pontos]))[:qtd_Peaks]
+        peak_y = list(np.abs(amplet[pontos]))[:qtd_Peaks]
+
+        lista = peak_x + peak_y
+        L.append(lista)
+    return scaler.fit_transform(pd.DataFrame(L))
 
 def getClasse(dados):
-    # Envia os dados para a API externa e recebe a classe
-    response = requests.post(api_url, json={"dados": dados})
-    if response.status_code == 200:
-        return response.json()["classe"]
-    else:
-        logger.error(f"Erro ao chamar API externa: {response.status_code}")
-        return None
+    harmonicos_normalizados = getHarmonicos(dados)    
+    classe = pd.DataFrame()
+    for harm in harmonicos_normalizados:
+        interpreter.set_tensor(input_details[0]['index'], [harm.astype(np.float32)])
+        interpreter.invoke()
+        predictions = interpreter.get_tensor(output_details[0]['index'])
+    
+        classe = pd.concat([classe, pd.DataFrame(predictions.round(decimals = 2), columns=[10, 13, 14, 15])])
+    
+    print(classe)
+    coluna_maior = classe.idxmax(axis=1)
+    coluna_mais_frequente = coluna_maior.value_counts().idxmax()
+    
+    return int(coluna_mais_frequente)
     
 def emit_notice(data):
     notice_payload = {"payload": data["payload"]}

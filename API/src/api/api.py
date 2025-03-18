@@ -49,7 +49,7 @@ def getClasse(dados):
     
     return int(coluna_mais_frequente)
 
-@app.route('/', methods=['POST'])
+@app.route('/classificar', methods=['POST'])
 def classificar():
     try:
         dados = request.json.get("dados", [])
