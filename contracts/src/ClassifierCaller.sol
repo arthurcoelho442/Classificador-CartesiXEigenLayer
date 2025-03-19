@@ -60,12 +60,14 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     function handleNotice(bytes32 inputPayloadHash, bytes memory notice) internal override {
         address sender      = requestSender[inputPayloadHash];
         uint256 timestamp   = requestTimestamp[inputPayloadHash];
-        require(sender != address(0), "Unknown request");
+        
+        require(requestSender != address(0), "Unknown request");
 
         require(notice.length >= 64, "Invalid notice length");
 
         (int256 id, int256 current) = abi.decode(notice, (int256, int256));
-        deviceData[sender][id].push(DeviceReportView(current, timestamp));
+        deviceData[requestSender][id].push(DeviceReportView(current, requestTimestamp));
+        
 
         delete requestSender[inputPayloadHash];
         delete requestTimestamp[inputPayloadHash];
