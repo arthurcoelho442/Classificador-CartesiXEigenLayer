@@ -25,11 +25,25 @@ frequencia = 60  # Hz
 T = 1 / frequencia
 amostras = int(T * 10**5)
 
-def normalize_features(data):
-    """ Normaliza os dados dividindo pelo valor máximo de cada característica """
-    max_values = np.max(data, axis=0, keepdims=True)
-    max_values[max_values == 0] = 1  # Evitar divisão por zero
-    return data / max_values
+def min_max_scale(data, feature_range=(0, 1)):
+    """
+    Normaliza os dados para um intervalo específico usando Min-Max Scaling.
+
+    Parâmetros:
+        data (array-like): Dados de entrada para normalização.
+        feature_range (tuple): Intervalo desejado (mínimo, máximo), padrão (0,1).
+
+    Retorna:
+        np.ndarray: Dados normalizados no intervalo especificado.
+    """
+    data = np.asarray(data, dtype=np.float64)  # Converter para numpy array
+    min_val, max_val = np.min(data), np.max(data)  # Encontrar min e max
+    a, b = feature_range  # Novo intervalo
+
+    if max_val == min_val:
+        return np.full_like(data, (a + b) / 2)  # Evitar divisão por zero
+
+    return a + ((data - min_val) * (b - a)) / (max_val - min_val)
 
 def getHarmonicos(dados, qtd_Peaks=7):
     L = []
@@ -48,7 +62,7 @@ def getHarmonicos(dados, qtd_Peaks=7):
 
         lista = peak_x + peak_y
         L.append(lista)
-    return normalize_features(np.array(L))
+    return min_max_scale(L)
 
 def getClasse(dados):
     harmonicos_normalizados = getHarmonicos(dados)    
@@ -102,9 +116,9 @@ def handle_advance(data):
         dados = [decoded_data[i:i + 1666] for i in range(0, len(decoded_data), 1666)]
         
         # Calculando a classe com a função getClasse
-        # classe = getClasse(dados)
+        classe = getClasse(dados)
 
-        classe = 10
+        # classe = 10
 
         if classe is None:
             return "reject"

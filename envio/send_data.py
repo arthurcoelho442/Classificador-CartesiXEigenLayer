@@ -21,7 +21,7 @@ def main():
         return
 
     # Configurações do contrato
-    contract_address = web3.to_checksum_address("0x1429859428C0aBc9C2C47C8Ee9FBaf82cFA0F20f")  # Substitua pelo endereço do seu contrato
+    contract_address = web3.to_checksum_address("0xBEc49fA140aCaA83533fB00A2BB19bDdd0290f25")  # Substitua pelo endereço do seu contrato
     contract_abi = json.loads('''
     [
         {
@@ -66,7 +66,7 @@ def main():
     print(f"Total de valores lidos: {total_values}. Batches a enviar: {total_batches}.")
 
     # Intervalo de envio (5 segundos)
-    interval = 5 # AUMENTAR O INTERVALO
+    interval = 10 # AUMENTAR O INTERVALO
 
     # Envio contínuo dos dados, batch por batch
     for batch_index in range(total_batches):

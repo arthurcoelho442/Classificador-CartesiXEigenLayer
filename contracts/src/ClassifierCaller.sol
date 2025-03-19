@@ -27,6 +27,9 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     mapping(bytes32 => address) public requestSender;
     mapping(bytes32 => uint256) public requestTimestamp;
     
+    // address public requestSender;
+    // uint256 public requestTimestamp;
+    
     event ResultReceived(bytes32 indexed inputPayloadHash, bytes output);
 
     modifier onlySuperAdmin() {
@@ -61,12 +64,12 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
         address sender      = requestSender[inputPayloadHash];
         uint256 timestamp   = requestTimestamp[inputPayloadHash];
         
-        require(requestSender != address(0), "Unknown request");
+        require(sender != address(0), "Unknown request");
 
         require(notice.length >= 64, "Invalid notice length");
 
         (int256 id, int256 current) = abi.decode(notice, (int256, int256));
-        deviceData[requestSender][id].push(DeviceReportView(current, requestTimestamp));
+        deviceData[sender][id].push(DeviceReportView(current, timestamp));
         
 
         delete requestSender[inputPayloadHash];
@@ -85,6 +88,9 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
 
         requestSender[requestHash]      = msg.sender;
         requestTimestamp[requestHash]   = timestamp;
+
+        // requestSender      = msg.sender;
+        // requestTimestamp   = timestamp;
 
         this.runExecution(input);
     }
