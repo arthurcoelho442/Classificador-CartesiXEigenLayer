@@ -27,9 +27,9 @@ def main():
         {
             "inputs": [
                 {
-                    "internalType": "uint256[]",
+                    "internalType": "int256[]",
                     "name": "currents",
-                    "type": "uint256[]"
+                    "type": "int256[]"
                 },
                 {
                     "internalType": "uint256",
@@ -47,34 +47,32 @@ def main():
     contract = web3.eth.contract(address=contract_address, abi=contract_abi)
 
     # Configurações da conta que enviará as transações
-    account_address = web3.to_checksum_address("0xSeuEnderecoDaConta")  # Substitua pelo seu endereço
-    private_key = "sua_chave_privada_aqui"  # Substitua pela sua chave privada (mantenha-a segura!)
+    account_address = web3.to_checksum_address("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")  # Substitua pelo seu endereço
     nonce = web3.eth.get_transaction_count(account_address)
 
     # Leitura e processamento do arquivo CSV
     try:
         df = pd.read_csv(filepath, delimiter="  ", header=None, engine='python').iloc[:, 0] * 10000
-        df = df.astype(int).values
+        dados = df.astype(int).tolist()
     except Exception as e:
         print("Erro ao ler o arquivo CSV:", e)
         return
     batch_size = 4998  # 1 segundo de dados
-    total_values = len(df)
+    total_values = len(dados)
     total_batches = total_values // batch_size
     print(f"Total de valores lidos: {total_values}. Batches a enviar: {total_batches}.")
-
+    
     # Intervalo de envio (5 segundos)
-    interval = 5
+    interval = 10
 
     # Envio contínuo dos dados, batch por batch
     for batch_index in range(total_batches):
         start_time = time.time()
 
         # Extrai o batch de 1.666 valores
-        batch_data = df.iloc[batch_index * batch_size: (batch_index + 1) * batch_size, 0].values
-        
-        if len(batch_data) != batch_size:
-            print(f"Batch {batch_index + 1} incompleto (tamanho: {len(batch_data)}). Pulando...")
+        currents_list = dados[batch_index * batch_size: (batch_index + 1) * batch_size]
+        if len(currents_list) != batch_size:
+            print(f"Batch {batch_index + 1} incompleto (tamanho: {len(currents_list)}). Pulando...")
             continue
         
         # Obtém o timestamp atual para este batch
@@ -83,16 +81,8 @@ def main():
 
         # Constrói e envia a transação
         try:
-            tx = contract.functions.sendData(batch_data, timestamp_value).build_transaction({
-                'chainId': 1337,           # Ajuste para sua rede (ex.: 1 para Mainnet, 3 para Testnet, 1337 para rede local)
-                'gas': 5000000,            # Ajuste o gas conforme necessário
-                'gasPrice': web3.to_wei('20', 'gwei'),
-                'nonce': nonce,
-            })
-            signed_tx = web3.eth.account.sign_transaction(tx, private_key=private_key)
-            tx_hash = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
-            print(f"Batch {batch_index + 1} enviado. Tx hash: {web3.toHex(tx_hash)}")
-            nonce += 1  # Incrementa o nonce para a próxima transação
+            web3.eth.default_account = web3.eth.accounts[0]
+            tx = contract.functions.sendData(currents_list, timestamp_value).transact({"from": web3.eth.default_account})
         except Exception as e:
             print(f"Erro ao enviar o batch {batch_index + 1}: {e}")
 
