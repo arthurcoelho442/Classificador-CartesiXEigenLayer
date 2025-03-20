@@ -60,7 +60,6 @@ def getHarmonicos(dados, qtd_Peaks=7):
 
 def getClasse(dados):
     harmonicos_normalizados = getHarmonicos(dados)
-    print(harmonicos_normalizados)
     predictions = modelo_carregado.predict(harmonicos_normalizados)
     predictions = predictions.round(decimals=2)
     

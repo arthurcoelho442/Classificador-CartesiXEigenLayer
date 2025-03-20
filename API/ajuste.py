@@ -13,7 +13,7 @@ def main():
     url = "http://localhost:5000/classificar"
     
     # Lista de valores de L
-    valores_L = [13, 14, 15, 10]
+    valores_L = [10, 13, 14, 15]
     
     for L in valores_L:
         caminho_arquivo = f"./src/prog2021/L{L}.csv"
@@ -32,9 +32,9 @@ def main():
                 
                 dados_form = dados.iloc[:, 0] * 10000
                 dados_form = dados_form.astype(int)
-                
+
                 # Converter para lista
-                dados_json = {"dados": dados.values.reshape(-1,1666).tolist()}
+                dados_json = {"dados": dados_form.values.reshape(-1,1666).tolist()}
 
                 # Enviar requisição para a API
                 response = requests.post(url, json=dados_json)
