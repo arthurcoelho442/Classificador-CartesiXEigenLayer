@@ -53,14 +53,13 @@ def main():
 
     # Leitura e processamento do arquivo CSV
     try:
-        df = pd.read_csv(filepath, delimiter="  ", header=None, engine='python')
-        data = df.values.flatten()
+        df = pd.read_csv(filepath, delimiter="  ", header=None, engine='python').iloc[:, 0] * 10000
+        df = df.astype(int).values
     except Exception as e:
         print("Erro ao ler o arquivo CSV:", e)
         return
-
     batch_size = 4998  # 1 segundo de dados
-    total_values = len(data)
+    total_values = len(df)
     total_batches = total_values // batch_size
     print(f"Total de valores lidos: {total_values}. Batches a enviar: {total_batches}.")
 
@@ -72,28 +71,22 @@ def main():
         start_time = time.time()
 
         # Extrai o batch de 1.666 valores
-        batch_data = data[batch_index * batch_size: (batch_index + 1) * batch_size]
+        batch_data = df.iloc[batch_index * batch_size: (batch_index + 1) * batch_size, 0].values
+        
         if len(batch_data) != batch_size:
             print(f"Batch {batch_index + 1} incompleto (tamanho: {len(batch_data)}). Pulando...")
             continue
-
-        try:
-            # Converte os valores de float para int, aplicando o fator de escala de 4 casas decimais
-            currents_list = [int(float(x) * 10000) for x in batch_data]
-        except Exception as e:
-            print(f"Erro ao converter valores do batch {batch_index + 1}: {e}")
-            continue
-
+        
         # Obtém o timestamp atual para este batch
         timestamp_value = int(time.time())
         print(f"Enviando batch {batch_index + 1}/{total_batches} com timestamp {timestamp_value}.")
 
         # Constrói e envia a transação
         try:
-            tx = contract.functions.sendData(currents_list, timestamp_value).build_ransaction({
+            tx = contract.functions.sendData(batch_data, timestamp_value).build_transaction({
                 'chainId': 1337,           # Ajuste para sua rede (ex.: 1 para Mainnet, 3 para Testnet, 1337 para rede local)
                 'gas': 5000000,            # Ajuste o gas conforme necessário
-                'gasPrice': web3.toWei('20', 'gwei'),
+                'gasPrice': web3.to_wei('20', 'gwei'),
                 'nonce': nonce,
             })
             signed_tx = web3.eth.account.sign_transaction(tx, private_key=private_key)
