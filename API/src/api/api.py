@@ -19,6 +19,26 @@ frequencia = 60  # Hz
 T = 1 / frequencia
 amostras = int(T * 10**5)
 
+def min_max_scale(data, feature_range=(0, 1)):
+    """
+    Normaliza os dados para um intervalo específico usando Min-Max Scaling.
+
+    Parâmetros:
+        data (array-like): Dados de entrada para normalização.
+        feature_range (tuple): Intervalo desejado (mínimo, máximo), padrão (0,1).
+
+    Retorna:
+        np.ndarray: Dados normalizados no intervalo especificado.
+    """
+    data = np.asarray(data, dtype=np.float64)  # Converter para numpy array
+    min_val, max_val = np.min(data), np.max(data)  # Encontrar min e max
+    a, b = feature_range  # Novo intervalo
+
+    if max_val == min_val:
+        return np.full_like(data, (a + b) / 2)  # Evitar divisão por zero
+
+    return a + ((data - min_val) * (b - a)) / (max_val - min_val)
+
 def getHarmonicos(dados, qtd_Peaks=7):
     L = []
     for i in range(len(dados)):
@@ -35,8 +55,8 @@ def getHarmonicos(dados, qtd_Peaks=7):
         peak_y = list(np.abs(amplet[pontos]))[:qtd_Peaks]
 
         lista = peak_x + peak_y
-        L.append(lista)
-    return scaler.fit_transform(pd.DataFrame(L))
+        L.append(min_max_scale(lista))
+    return pd.DataFrame(L)
 
 def getClasse(dados):
     harmonicos_normalizados = getHarmonicos(dados)
