@@ -94,7 +94,9 @@ def handle_advance(data):
             return "reject"
 
         # Criando uma lista de listas (reshape manual)
-        dados = [decoded_data[i:i + 1666] for i in range(0, len(decoded_data), 1666)]
+        # dados = [decoded_data[i:i + 1666] for i in range(0, len(decoded_data), 1666)]
+        
+        dados = pd.DataFrame(decoded_data).values.reshape(-1,1666).tolist()
         
         # Calculando a classe com a função getClasse
         classe = getClasse(dados)
@@ -103,7 +105,7 @@ def handle_advance(data):
             return "reject"
 
         # Calculando a média dos dados
-        mean_current = int((sum(sum(sublist) for sublist in dados)) / len(decoded_data))
+        mean_current = int(sum(decoded_data) / len(decoded_data))
 
         # Convertendo a resposta para hexadecimal
         payload_bytes = bytes.fromhex(f"{classe:064x}") + bytes.fromhex(f"{mean_current:064x}")

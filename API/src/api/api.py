@@ -45,7 +45,6 @@ def getClasse(dados):
     
     classe = pd.DataFrame(predictions, columns=[10, 13, 14, 15])
     coluna_maior = classe.idxmax(axis=1)
-    print(coluna_maior)
     coluna_mais_frequente = coluna_maior.value_counts().idxmax()
     
     return int(coluna_mais_frequente)

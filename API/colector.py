@@ -15,10 +15,11 @@ def main():
     L = 10
     # dados = pd.read_csv(f"./src/prog2021/L{L}.csv", delimiter="  ", header=None, engine='python').iloc[:qtd_Dados, 0] * 10000
     dados = pd.read_csv(f"./src/prog2021-AJUST/L{L}.csv", delimiter=",", header=None, engine='python').iloc[:qtd_Dados, 0] * 10000
-    dados = dados.astype(int).tolist()
-    
+    dados = dados.astype(int)
+
     # Converter para lista
-    dados_json = {"dados": [dados]}
+    dados_json = {"dados": dados.values.reshape(-1,1666).tolist()}
+
     # Enviar requisição para a API
     response = requests.post(url, json=dados_json)
     

@@ -31,10 +31,10 @@ def main():
                     break
                 
                 dados_form = dados.iloc[:, 0] * 10000
-                dados_form = dados_form.astype(int).tolist()
+                dados_form = dados_form.astype(int)
                 
                 # Converter para lista
-                dados_json = {"dados": [dados_form]}
+                dados_json = {"dados": dados.values.reshape(-1,1666).tolist()}
 
                 # Enviar requisição para a API
                 response = requests.post(url, json=dados_json)
