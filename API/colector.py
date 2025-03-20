@@ -12,7 +12,7 @@ def main():
     
     # [10, 13, 14, 15]
     # Leitura dos dados (pandas)
-    L = 10
+    L = 15
     # dados = pd.read_csv(f"./src/prog2021/L{L}.csv", delimiter="  ", header=None, engine='python').iloc[:qtd_Dados, 0] * 10000
     dados = pd.read_csv(f"./src/prog2021-AJUST/L{L}.csv", delimiter=",", header=None, engine='python').iloc[:qtd_Dados, 0] * 10000
     dados = dados.astype(int)

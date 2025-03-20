@@ -13,7 +13,7 @@ def main():
     url = "http://localhost:5000/classificar"
     
     # Lista de valores de L
-    valores_L = [10, 13, 14, 15]
+    valores_L = [13, 14, 15, 10]
     
     for L in valores_L:
         caminho_arquivo = f"./src/prog2021/L{L}.csv"
