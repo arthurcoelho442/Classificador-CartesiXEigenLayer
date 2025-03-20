@@ -27,9 +27,6 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
     mapping(bytes32 => address) public requestSender;
     mapping(bytes32 => uint256) public requestTimestamp;
     
-    // address public requestSender;
-    // uint256 public requestTimestamp;
-    
     event ResultReceived(bytes32 indexed inputPayloadHash, bytes output);
 
     modifier onlySuperAdmin() {
@@ -88,9 +85,6 @@ contract ClassifierCaller is CoprocessorAdapter, AccessControl {
 
         requestSender[requestHash]      = msg.sender;
         requestTimestamp[requestHash]   = timestamp;
-
-        // requestSender      = msg.sender;
-        // requestTimestamp   = timestamp;
 
         this.runExecution(input);
     }

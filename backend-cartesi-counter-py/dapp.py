@@ -48,7 +48,7 @@ def min_max_scale(data, feature_range=(0, 1)):
 def getHarmonicos(dados, qtd_Peaks=7):
     L = []
     for i in range(len(dados)):
-        df = pd.Series(dados[i])
+        df = pd.Series(dados[i]) / 10000
 
         fft = np.fft.fft(df)
         fast = np.fft.fftfreq(amostras, T)
@@ -113,22 +113,18 @@ def handle_advance(data):
             return "reject"
 
         # Criando uma lista de listas (reshape manual)
-        dados = [decoded_data[i:i + 1666] for i in range(0, len(decoded_data), 1666)]
+        dados = pd.DataFrame(decoded_data).values.reshape(-1,1666).tolist()
         
         # Calculando a classe com a função getClasse
         classe = getClasse(dados)
-
-        # classe = 10
 
         if classe is None:
             return "reject"
 
         # Calculando a média dos dados
-        mean_current = int((sum(sum(sublist) for sublist in dados)) / len(decoded_data))
+        mean_current = int(sum(decoded_data) / len(decoded_data))
 
         # Convertendo a resposta para hexadecimal
-        # payload_bytes = bytes.fromhex(f"{classe:064x}") + bytes.fromhex(f"{mean_current:064x}")
-
         # ABI encode the data
         encoded_data = encode(
             ['int256', 'int256'],
