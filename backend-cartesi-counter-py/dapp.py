@@ -2,10 +2,10 @@ from os import environ
 import logging
 import requests
 import tflite_runtime.interpreter as tflite
-from sklearn.preprocessing import MinMaxScaler
 from scipy import signal
 import pandas as pd
 import numpy as np
+from eth_abi import encode
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -20,16 +20,35 @@ interpreter.allocate_tensors()
 # Obter informações do modelo
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
-scaler = MinMaxScaler(feature_range=(0, 1))
 
 frequencia = 60  # Hz
 T = 1 / frequencia
 amostras = int(T * 10**5)
 
+def min_max_scale(data, feature_range=(0, 1)):
+    """
+    Normaliza os dados para um intervalo específico usando Min-Max Scaling.
+
+    Parâmetros:
+        data (array-like): Dados de entrada para normalização.
+        feature_range (tuple): Intervalo desejado (mínimo, máximo), padrão (0,1).
+
+    Retorna:
+        np.ndarray: Dados normalizados no intervalo especificado.
+    """
+    data = np.asarray(data, dtype=np.float64)  # Converter para numpy array
+    min_val, max_val = np.min(data), np.max(data)  # Encontrar min e max
+    a, b = feature_range  # Novo intervalo
+
+    if max_val == min_val:
+        return np.full_like(data, (a + b) / 2)  # Evitar divisão por zero
+
+    return a + ((data - min_val) * (b - a)) / (max_val - min_val)
+
 def getHarmonicos(dados, qtd_Peaks=7):
     L = []
     for i in range(len(dados)):
-        df = pd.Series(dados[i])
+        df = pd.Series(dados[i]) / 10000
 
         fft = np.fft.fft(df)
         fast = np.fft.fftfreq(amostras, T)
@@ -43,7 +62,7 @@ def getHarmonicos(dados, qtd_Peaks=7):
 
         lista = peak_x + peak_y
         L.append(lista)
-    return scaler.fit_transform(pd.DataFrame(L))
+    return min_max_scale(L)
 
 def getClasse(dados):
     harmonicos_normalizados = getHarmonicos(dados)    
@@ -94,8 +113,6 @@ def handle_advance(data):
             return "reject"
 
         # Criando uma lista de listas (reshape manual)
-        # dados = [decoded_data[i:i + 1666] for i in range(0, len(decoded_data), 1666)]
-        
         dados = pd.DataFrame(decoded_data).values.reshape(-1,1666).tolist()
         
         # Calculando a classe com a função getClasse
@@ -108,10 +125,17 @@ def handle_advance(data):
         mean_current = int(sum(decoded_data) / len(decoded_data))
 
         # Convertendo a resposta para hexadecimal
-        payload_bytes = bytes.fromhex(f"{classe:064x}") + bytes.fromhex(f"{mean_current:064x}")
+        # ABI encode the data
+        encoded_data = encode(
+            ['int256', 'int256'],
+            [classe, mean_current]
+        )
+        
+        # Convert to hex and emit notice
+        hex_data = "0x" + encoded_data.hex()
 
         # Emitindo o aviso com o resultado
-        payload = {"payload": f"0x{payload_bytes.hex()}"}
+        payload = {"payload": hex_data}
 
         emit_notice(payload)
 
